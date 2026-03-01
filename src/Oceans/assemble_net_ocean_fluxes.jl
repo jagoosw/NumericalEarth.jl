@@ -130,6 +130,7 @@ end
         atmos_ocean_fluxes.upwelling_longwave[i, j, 1] = Qu
         atmos_ocean_fluxes.downwelling_longwave[i, j, 1] = - Qaℓ
         atmos_ocean_fluxes.downwelling_shortwave[i, j, 1] = - Qts
+        atmos_ocean_fluxes.total_heat_flux[i, j, 1] = ΣQao
     end
 
     # Convert from a mass flux to a volume flux (aka velocity)
@@ -142,6 +143,9 @@ end
     # a different sign convention as the prescribed water mass fluxes (positive upwards)
     Fv = Mv * ρₒ⁻¹
     ΣFao += Fv
+    ΣMao = - Mp + Mv # net freshwater mass flux (kg m⁻² s⁻¹)
+
+    @inbounds atmos_ocean_fluxes.total_freshwater_flux[i, j, 1] = ΣMao
 
     # Compute fluxes for u, v, T, and S from momentum, heat, and freshwater fluxes
     τx = net_ocean_fluxes.u
