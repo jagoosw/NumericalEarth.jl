@@ -35,6 +35,7 @@ examples = [
     Example("Global climate simulation", "global_climate_simulation", false),
     Example("Veros ocean simulation", "veros_ocean_forced_simulation", false),
     Example("Breeze over two oceans", "breeze_over_two_oceans", false),
+    Example("ERA5 winds and Stokes drift", "ERA5_winds_and_stokes_drift", false),
 ]
 
 # Developer examples from docs/src/developers/ directory
@@ -88,6 +89,10 @@ pages = [
         "Supported variables" => "Metadata/supported_variables.md",
     ],
     "Interface fluxes" => "interface_fluxes.md",
+
+    "Appendix" => [
+        "Notation" => "appendix/notation.md",
+    ],
 
     "Library" => [
         "Contents"       => "library/outline.md",
