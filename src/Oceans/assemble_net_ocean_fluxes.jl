@@ -171,11 +171,6 @@ end
 
         # Tracer fluxes
         Jᵀ[i, j, 1] = Jᵀao + Jᵀio # Jᵀao is already multiplied by the sea ice concentration
-        Jˢ[i, j, 1] = Jˢ_total
-
-        # Diagnostic freshwater mass fluxes:
-        # - total_freshwater_flux: pure atmosphere mass flux term (-Mp + Mv)
-        # - total_freshwater_flux_with_salt_equiv: includes -Jˢ/S₀ freshwater-equivalent
-        atmos_ocean_fluxes.total_freshwater_flux_with_salt_equiv[i, j, 1] = ΣMao_with_salt_equiv
+        Jˢ[i, j, 1] = (1 - ℵᵢ) * Jˢao + Jˢio
     end
 end
