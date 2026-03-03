@@ -5,9 +5,9 @@ import ..EarthSystemModels: EarthSystemModel, checkpoint_auxiliary_state, restor
 struct OceanHeatContentTendencyMethod end
 struct MeridionalHeatFluxMethod end
 
-mutable struct MeridionalHeatTransportState{FT, FL}
-    cumulative_ohc_tendency :: FL
-    cumulative_heat_flux :: FL
+mutable struct MeridionalHeatTransportState{FT, OHC, HF}
+    cumulative_∫ohc_tendency :: OHC
+    cumulative_∫heat_flux :: HF
     last_time :: FT
     last_iteration :: Int
 end
@@ -82,19 +82,20 @@ function reset_meridional_heat_transport_state!(esm)
     return nothing
 end
 
-function initialize_mht_state!(esm, heat_flux, ohc_tendency, time, iteration)
-    cumulative_ohc_tendency = deepcopy(ohc_tendency)
-    set!(cumulative_ohc_tendency, 0)
+function initialize_mht_state!(esm, ∫heat_flux, ∫ohc_tendency, time, iteration)
+    cumulative_∫ohc_tendency = deepcopy(∫ohc_tendency)
+    set!(cumulative_∫ohc_tendency, 0)
 
-    cumulative_heat_flux = deepcopy(heat_flux)
-    set!(cumulative_heat_flux, 0)
+    cumulative_∫heat_flux = deepcopy(∫heat_flux)
+    set!(cumulative_∫heat_flux, 0)
 
     FT = eltype(esm)
-    FL = typeof(cumulative_ohc_tendency)
-    state = MeridionalHeatTransportState{FT, FL}(cumulative_ohc_tendency,
-                                                 cumulative_heat_flux,
-                                                 time,
-                                                 iteration)
+    OHC = typeof(cumulative_∫ohc_tendency)
+    HF = typeof(cumulative_∫heat_flux)
+    state = MeridionalHeatTransportState{FT, OHC, HF}(cumulative_∫ohc_tendency,
+                                                      cumulative_∫heat_flux,
+                                                      time,
+                                                      iteration)
     meridional_heat_transport_states[esm] = state
     return state
 end
@@ -105,14 +106,17 @@ function meridional_heat_transport_via_ocean_heat_content_tendency(esm)
     heat_flux = net_ocean_heat_flux(esm)
     ∂T_∂t = esm.ocean.model.timestepper.Gⁿ.T
 
-    ohc_tendency = Field(Integral(ρᵒᶜ * cᵒᶜ * ∂T_∂t, dims=(1, 3)))
-    compute!(ohc_tendency)
+    ∫ohc_tendency = Field(Integral(ρᵒᶜ * cᵒᶜ * ∂T_∂t, dims=(1, 3)))
+    compute!(∫ohc_tendency)
+
+    ∫heat_flux = Field(Integral(heat_flux, dims=1))
+    compute!(∫heat_flux)
 
     model_time = esm.ocean.model.clock.time
     model_iteration = esm.ocean.model.clock.iteration
     state = get(meridional_heat_transport_states, esm, nothing)
     state === nothing &&
-        (state = initialize_mht_state!(esm, heat_flux, ohc_tendency, model_time, model_iteration))
+        (state = initialize_mht_state!(esm, ∫heat_flux, ∫ohc_tendency, model_time, model_iteration))
 
     if model_iteration != state.last_iteration
         Δt = max(0.0, model_time - state.last_time)
@@ -120,15 +124,14 @@ function meridional_heat_transport_via_ocean_heat_content_tendency(esm)
             Δt = ocean.model.clock.Δt
         end
 
-        set!(state.cumulative_ohc_tendency, state.cumulative_ohc_tendency + Δt * ohc_tendency_field)
-        set!(state.cumulative_heat_flux, state.cumulative_heat_flux + Δt * heat_flux_field)
+        set!(state.cumulative_∫ohc_tendency, state.cumulative_ohc_∫tendency + Δt * ∫ohc_tendency)
+        set!(state.cumulative_∫heat_flux, state.cumulative_∫heat_flux + Δt * ∫heat_flux)
+
         state.last_time = model_time
         state.last_iteration = model_iteration
     end
 
-    ∫heat_flux = Integral(state.cumulative_heat_flux, dims=1)
-
-    return CumulativeIntegral(state.cumulative_ohc_tendency - ∫heat_flux, dims=(2))
+    return Field(CumulativeIntegral(state.cumulative_∫ohc_tendency - ∫heat_flux, dims=2))
 end
 
 function meridional_heat_transport_via_meridional_heat_flux(esm; reference_temperature)
@@ -136,7 +139,8 @@ function meridional_heat_transport_via_meridional_heat_flux(esm; reference_tempe
     cᵒᶜ = heat_capacity(esm.ocean)
     T = esm.ocean.model.tracers.T
     v = esm.ocean.model.velocities.v
-    return ρᵒᶜ * cᵒᶜ * Integral(v * (T - reference_temperature), dims=(1, 3))
+    mht = Field(Integral(ρᵒᶜ * cᵒᶜ * v * (T - reference_temperature), dims=(1, 3)))
+    return mht
 end
 
 function checkpoint_auxiliary_state(esm::EarthSystemModel)
@@ -145,8 +149,8 @@ function checkpoint_auxiliary_state(esm::EarthSystemModel)
 
     return (
         meridional_heat_transport = (
-            cumulative_ohc_tendency = Array(interior(state.cumulative_ohc_tendency)),
-            cumulative_heat_flux = Array(interior(state.cumulative_heat_flux)),
+            cumulative_ohc_tendency = Array(interior(state.cumulative_∫ohc_tendency)),
+            cumulative_heat_flux = Array(interior(state.cumulative_∫heat_flux)),
             last_time = state.last_time,
             last_iteration = state.last_iteration
         ),
@@ -160,19 +164,25 @@ function restore_auxiliary_state!(esm::EarthSystemModel, auxiliary_state)
     mht_state = auxiliary_state.meridional_heat_transport
     mht_state === nothing && return nothing
 
+    ρᵒᶜ = reference_density(esm.ocean)
+    cᵒᶜ = heat_capacity(esm.ocean)
     heat_flux = net_ocean_heat_flux(esm)
     ∂T_∂t = esm.ocean.model.timestepper.Gⁿ.T
-    ohc_tendency = Field(Integral(∂T_∂t, dims=(1, 3)))
-    compute!(ohc_tendency)
+
+    ∫ohc_tendency = Field(Integral(ρᵒᶜ * cᵒᶜ * ∂T_∂t, dims=(1, 3)))
+    compute!(∫ohc_tendency)
+
+    ∫heat_flux = Field(Integral(heat_flux, dims=1))
+    compute!(∫heat_flux)
 
     reset_meridional_heat_transport_state!(esm)
     state = initialize_mht_state!(esm,
-                                  heat_flux,
-                                  ohc_tendency,
+                                  ∫heat_flux,
+                                  ∫ohc_tendency,
                                   mht_state.last_time,
                                   mht_state.last_iteration)
-    set!(state.cumulative_ohc_tendency, mht_state.cumulative_ohc_tendency)
-    set!(state.cumulative_heat_flux, mht_state.cumulative_heat_flux)
+    set!(state.cumulative_∫ohc_tendency, mht_state.∫cumulative_ohc_tendency)
+    set!(state.cumulative_∫heat_flux, mht_state.∫cumulative_heat_flux)
     state.last_time = mht_state.last_time
     state.last_iteration = mht_state.last_iteration
     return nothing
