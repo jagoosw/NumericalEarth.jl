@@ -36,7 +36,9 @@ export
     ECCO2Daily, ECCO2Monthly, ECCO4Monthly,
     ECCO2DarwinMonthly, ECCO4DarwinMonthly,
     EN4Monthly,
+    WOAClimatology, WOAAnnual, WOAMonthly,
     GLORYSDaily, GLORYSMonthly, GLORYSStatic,
+    ORCA1,
     RepeatYearJRA55, MultiYearJRA55,
     first_date,
     last_date,
@@ -45,6 +47,7 @@ export
     LinearlyTaperedPolarMask,
     DatasetRestoring,
     ocean_simulation,
+    ORCA1Grid,
     sea_ice_simulation,
     atmosphere_simulation,
     sea_ice_dynamics,
@@ -98,7 +101,7 @@ include("Bathymetry.jl")
 include("Diagnostics/Diagnostics.jl")
 
 using .DataWrangling
-using .DataWrangling: ETOPO, ECCO, GLORYS, EN4, JRA55
+using .DataWrangling: ETOPO, ECCO, GLORYS, EN4, WOA, JRA55
 using .Bathymetry
 using .InitialConditions
 using .EarthSystemModels
@@ -112,6 +115,8 @@ using NumericalEarth.DataWrangling.ETOPO
 using NumericalEarth.DataWrangling.ECCO
 using NumericalEarth.DataWrangling.GLORYS
 using NumericalEarth.DataWrangling.EN4
+using NumericalEarth.DataWrangling.ORCA
+using NumericalEarth.DataWrangling.WOA
 using NumericalEarth.DataWrangling.JRA55
 using NumericalEarth.DataWrangling.JRA55: JRA55NetCDFBackend
 
