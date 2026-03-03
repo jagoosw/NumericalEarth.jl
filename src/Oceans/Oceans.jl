@@ -1,6 +1,6 @@
 module Oceans
 
-export ocean_simulation, SlabOcean
+export ocean_simulation, SlabOcean, ORCA1Grid
 
 using Oceananigans
 using Oceananigans.Units
@@ -63,6 +63,7 @@ include("slab_ocean.jl")
 include("barotropic_potential_forcing.jl")
 include("radiative_forcing.jl")
 include("ocean_simulation.jl")
+include("orca1_grid.jl")
 include("assemble_net_ocean_fluxes.jl")
 
 #####
@@ -111,9 +112,9 @@ end
 
 function net_fluxes(ocean::Simulation{<:HydrostaticFreeSurfaceModel})
     # TODO: Generalize this to work with any ocean model
-    τx = ocean.model.velocities.u.boundary_conditions.top.condition
-    τy = ocean.model.velocities.v.boundary_conditions.top.condition
-    net_ocean_surface_fluxes = (; u=τx, v=τy)
+    τˣ = ocean.model.velocities.u.boundary_conditions.top.condition
+    τʸ = ocean.model.velocities.v.boundary_conditions.top.condition
+    net_ocean_surface_fluxes = (; u=τˣ, v=τʸ)
 
     tracers = ocean.model.tracers
     ocean_surface_tracer_fluxes = NamedTuple(name => tracers[name].boundary_conditions.top.condition for name in keys(tracers))

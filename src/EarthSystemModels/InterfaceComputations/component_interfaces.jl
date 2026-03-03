@@ -265,20 +265,20 @@ function sea_ice_ocean_interface(grid, sea_ice, ocean, flux_formulation)
     io_fluxes = SeaIceOceanFluxes(grid)
 
     # For default flux formulations, interface temperature and salinity point to ocean surface
-    Tᵢ = ocean_surface_temperature(ocean)
-    Sᵢ = ocean_surface_salinity(ocean)
+    Tⁱⁿᵗ = ocean_surface_temperature(ocean)
+    Sⁱⁿᵗ = ocean_surface_salinity(ocean)
 
-    return SeaIceOceanInterface(io_fluxes, flux_formulation, Tᵢ, Sᵢ)
+    return SeaIceOceanInterface(io_fluxes, flux_formulation, Tⁱⁿᵗ, Sⁱⁿᵗ)
 end
 
 function sea_ice_ocean_interface(grid, sea_ice, ocean, flux_formulation::ThreeEquationHeatFlux)
     io_fluxes = SeaIceOceanFluxes(grid)
 
     # Interface temperature and salinity are computed fields
-    Tᵢ = Field{Center, Center, Nothing}(grid)
-    Sᵢ = Field{Center, Center, Nothing}(grid)
+    Tⁱⁿᵗ = Field{Center, Center, Nothing}(grid)
+    Sⁱⁿᵗ = Field{Center, Center, Nothing}(grid)
 
-    return SeaIceOceanInterface(io_fluxes, flux_formulation, Tᵢ, Sᵢ)
+    return SeaIceOceanInterface(io_fluxes, flux_formulation, Tⁱⁿᵗ, Sⁱⁿᵗ)
 end
 
 #####
