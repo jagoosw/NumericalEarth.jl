@@ -1,8 +1,17 @@
 import ..EarthSystemModels: EarthSystemModel, checkpoint_auxiliary_state, restore_auxiliary_state!,
-                             reference_density, heat_capacity
+                            reference_density, heat_capacity
+
+mutable struct MeridionalHeatTransportState
+    cumulative_ohc_tendency::Any
+    cumulative_heat_flux::Any
+    last_time::Float64
+    last_iteration::Int
+end
+
+const meridional_heat_transport_states = IdDict{Any, MeridionalHeatTransportState}()
 
 """
-    Meridional_Heat_Transport(coupled_model; method=:ohc_tendency, T_ref=0.0)
+    meridional_heat_transport(esm::EarthSystemModel; method=:ohc_tendency, T_ref=0.0)
 
 Compute meridional heat transport with one of two methods:
 
@@ -18,14 +27,17 @@ Compute meridional heat transport with one of two methods:
 `ρₒ` and `cₚ` are inferred from `coupled_model.ocean` via
 `reference_density` and `heat_capacity`.
 """
-mutable struct MeridionalHeatTransportState
-    cumulative_ohc_tendency::Any
-    cumulative_heat_flux::Any
-    last_time::Float64
-    last_iteration::Int
-end
+function meridional_heat_transport(esm::EarthSystemModel; method=:ohc_tendency, T_ref=0.0)
+    ρₒ, cₚ = mht_constants(esm)
 
-const meridional_heat_transport_states = IdDict{Any, MeridionalHeatTransportState}()
+    if method === :ohc_tendency
+        return ohc_tendency_mht(esm, ρₒ, cₚ)
+    elseif method === :vt_instantaneous
+        return instantaneous_vt_mht(esm, ρₒ, cₚ, T_ref)
+    else
+        throw(ArgumentError("Unknown MHT method=$(repr(method)). Supported methods are :ohc_tendency and :vt_instantaneous."))
+    end
+end
 
 allocate_storage_like(field) = Field(instantiated_location(field), field.grid; indices=indices(field))
 
@@ -98,18 +110,6 @@ end
 function instantaneous_vt_mht(coupled_model, ρₒ, cₚ, T_ref)
     ocean_model = coupled_model.ocean.model
     return ρₒ * cₚ * Integral(ocean_model.velocities.v * (ocean_model.tracers.T - T_ref), dims=(1, 3))
-end
-
-function Meridional_Heat_Transport(coupled_model; method=:ohc_tendency, T_ref=0.0)
-    ρₒ, cₚ = mht_constants(coupled_model)
-
-    if method === :ohc_tendency
-        return ohc_tendency_mht(coupled_model, ρₒ, cₚ)
-    elseif method === :vt_instantaneous
-        return instantaneous_vt_mht(coupled_model, ρₒ, cₚ, T_ref)
-    else
-        throw(ArgumentError("Unknown MHT method=$(repr(method)). Supported methods are :ohc_tendency and :vt_instantaneous."))
-    end
 end
 
 function checkpoint_auxiliary_state(coupled_model::EarthSystemModel)
