@@ -75,22 +75,10 @@ function initialize_mht_state!(esm, heat_flux_field, ohc_tendency_field, time, i
     return state
 end
 
-function current_heat_flux_field(esm)
-    flux_outputs = InterfaceFluxOutputs(esm;
-                                        isolate_sea_ice=false,
-                                        units=:physical,
-                                        reference_salinity=35)
-
-    heat_flux_raw = haskey(flux_outputs, "heat_flux") ? flux_outputs["heat_flux"] : flux_outputs[:heat_flux]
-    heat_flux_field = Field(heat_flux_raw)
-    compute!(heat_flux_field)
-    return heat_flux_field
-end
-
 function ohc_tendency_mht(esm)
     ρᵒᶜ = reference_density(esm.ocean)
     cᵒᶜ = heat_capacity(esm.ocean)
-    heat_flux = current_heat_flux_field(esm)
+    heat_flux = net_ocean_heat_flux(esm)
     T_tendency = esm.ocean.model.timestepper.Gⁿ.T
 
     ohc_tendency = Field(ρᵒᶜ * cᵒᶜ * Integral(T_tendency, dims=(1, 3)))
@@ -148,7 +136,7 @@ function restore_auxiliary_state!(esm::EarthSystemModel, auxiliary_state)
     mht_state = auxiliary_state.meridional_heat_transport
     mht_state === nothing && return nothing
 
-    heat_flux_field = current_heat_flux_field(esm)
+    heat_flux_field = net_ocean_heat_flux(esm)
     ohc_tendency_template = Field(Integral(esm.ocean.model.timestepper.Gⁿ.T, dims=(1, 3)))
     compute!(ohc_tendency_template)
 
