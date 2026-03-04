@@ -80,18 +80,23 @@ for arch in test_architectures
         T_flux = ocean.model.tracers.T.boundary_conditions.top.condition
         S_flux = ocean.model.tracers.S.boundary_conditions.top.condition
         sea_ice_ocean_fluxes = esm.interfaces.sea_ice_ocean_interface.fluxes
+        atmosphere_ocean_fluxes = esm.interfaces.atmosphere_ocean_interface.fluxes
 
         T_flux_value = 2.0
         S_flux_value = 5.0
         frazil_heat_flux_value = 0.2
         interface_heat_flux_value = 0.3
         sea_ice_ocean_salt_flux_value = 0.9
+        sea_ice_ocean_freshwater_flux_value = 0.8
+        atmosphere_ocean_freshwater_flux_value = 1.7
 
         fill!(T_flux, T_flux_value)
         fill!(S_flux, S_flux_value)
         fill!(sea_ice_ocean_fluxes.frazil_heat, frazil_heat_flux_value)
         fill!(sea_ice_ocean_fluxes.interface_heat, interface_heat_flux_value)
         fill!(sea_ice_ocean_fluxes.salt, sea_ice_ocean_salt_flux_value)
+        fill!(sea_ice_ocean_fluxes.freshwater_flux, sea_ice_ocean_freshwater_flux_value)
+        fill!(atmosphere_ocean_fluxes.freshwater_flux, atmosphere_ocean_freshwater_flux_value)
 
         ρᵒᶜ = esm.interfaces.ocean_properties.reference_density
         cᵒᶜ = esm.interfaces.ocean_properties.heat_capacity
@@ -101,9 +106,9 @@ for arch in test_architectures
         net_ocean_heat = net_ocean_heat_flux(esm)
         sea_ice_ocean_heat = sea_ice_ocean_heat_flux(esm)
         atmosphere_ocean_heat = atmosphere_ocean_heat_flux(esm)
-        net_ocean_freshwater = net_ocean_freshwater_flux(esm; reference_salinity = S₀)
-        sea_ice_ocean_freshwater = sea_ice_ocean_freshwater_flux(esm; reference_salinity = S₀)
-        atmosphere_ocean_freshwater = atmosphere_ocean_freshwater_flux(esm; reference_salinity = S₀)
+        net_ocean_freshwater = net_ocean_freshwater_flux(esm)
+        sea_ice_ocean_freshwater = sea_ice_ocean_freshwater_flux(esm)
+        atmosphere_ocean_freshwater = atmosphere_ocean_freshwater_flux(esm)
 
         diags = (frazil_heat, net_ocean_heat, sea_ice_ocean_heat, atmosphere_ocean_heat,
                  net_ocean_freshwater, sea_ice_ocean_freshwater, atmosphere_ocean_freshwater)
@@ -121,10 +126,9 @@ for arch in test_architectures
             @test sea_ice_ocean_heat[1, 1, 1] ≈ frazil_heat_flux_value + interface_heat_flux_value
             @test net_ocean_heat[1, 1, 1] ≈ atmosphere_ocean_heat[1, 1, 1] + sea_ice_ocean_heat[1, 1, 1]
 
-            @test net_ocean_freshwater[1, 1, 1] ≈ - ρᵒᶜ / S₀ * S_flux_value
-            @test sea_ice_ocean_freshwater[1, 1, 1] ≈ - ρᵒᶜ / S₀ * sea_ice_ocean_salt_flux_value
-            @test atmosphere_ocean_freshwater[1, 1, 1] ≈ - ρᵒᶜ / S₀ * (S_flux_value - sea_ice_ocean_salt_flux_value)
-            @test net_ocean_freshwater[1, 1, 1] ≈ atmosphere_ocean_freshwater[1, 1, 1] + sea_ice_ocean_freshwater[1, 1, 1]
+            @test net_ocean_freshwater[1, 1, 1] ≈ sea_ice_ocean_freshwater_flux_value + ρᵒᶜ * atmosphere_ocean_freshwater_flux_value
+            @test sea_ice_ocean_freshwater[1, 1, 1] ≈ sea_ice_ocean_freshwater_flux_value
+            @test atmosphere_ocean_freshwater[1, 1, 1] ≈ ρᵒᶜ * atmosphere_ocean_freshwater_flux_value
         end
     end
 end
