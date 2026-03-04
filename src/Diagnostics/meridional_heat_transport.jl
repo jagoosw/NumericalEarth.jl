@@ -32,7 +32,7 @@ Arguments
      is computed via:
 
      ```math
-     ∫_{y_S}^y dy [(∫dt ∫dx ∫dz ρᵒᶜ cᵒᶜ ∂ₜT) - (∫dt ∫dx 𝒬)]
+     ∫_{y_S}^y \\mathrm{d}y \\left( ∫\\mathrm{d}t ∫\\mathrm{d}x ∫\\mathrm{d}z \\, ρᵒᶜ cᵒᶜ ∂ₜT  -  ∫\\mathrm{d}t ∫\\mathrm{d}x \\,  𝒬 \\right)
      ```
 
      where ``y_S`` is the Southern-most latitude of the domain and ``𝒬`` is the
@@ -41,7 +41,7 @@ Arguments
   2. For `MeridionalHeatFluxMethod()`, the meridional heat transport is computed via:
 
      ```math
-     ρᵒᶜ cᵒᶜ ∫dx ∫dz v (T - T_{\\rm ref})
+     ρᵒᶜ cᵒᶜ ∫\\mathrm{d}x ∫\\mathrm{d}z \\, v (T - T_{\\rm ref})
      ```
 
   Above, ``ρᵒᶜ`` and ``cᵒᶜ`` are the ocean reference density and heat capacity respectively
@@ -52,7 +52,7 @@ Arguments
 Keyword Arguments
 =================
 
-* `reference_temperature`: The reference temperature used for `:vt_instantaneous` method.
+* `reference_temperature`: The reference temperature used for `MeridionalHeatFluxMethod()`.
 """
 function meridional_heat_transport(esm::EarthSystemModel, ::OceanHeatContentTendencyMethod;
                                    reference_temperature=0.0)
@@ -106,7 +106,7 @@ function meridional_heat_transport_via_ocean_heat_content_tendency(esm)
     heat_flux = net_ocean_heat_flux(esm)
     ∂T_∂t = esm.ocean.model.timestepper.Gⁿ.T
 
-    ∫ohc_tendency = Field(Integral(ρᵒᶜ * cᵒᶜ * ∂T_∂t, dims=(1, 3)))
+    ∫ohc_tendency = Field(sum(Field(Integral(ρᵒᶜ * cᵒᶜ * ∂T_∂t, dims=1)), dims=3))
     compute!(∫ohc_tendency)
 
     ∫heat_flux = Field(Integral(heat_flux, dims=1))
@@ -131,7 +131,7 @@ function meridional_heat_transport_via_ocean_heat_content_tendency(esm)
         state.last_iteration = model_iteration
     end
 
-    return Field(CumulativeIntegral(state.cumulative_∫ohc_tendency - ∫heat_flux, dims=2))
+    return CumulativeIntegral(state.cumulative_∫ohc_tendency - state.cumulative_∫heat_flux, dims=2)
 end
 
 function meridional_heat_transport_via_meridional_heat_flux(esm; reference_temperature)
@@ -139,7 +139,7 @@ function meridional_heat_transport_via_meridional_heat_flux(esm; reference_tempe
     cᵒᶜ = heat_capacity(esm.ocean)
     T = esm.ocean.model.tracers.T
     v = esm.ocean.model.velocities.v
-    mht = Field(Integral(ρᵒᶜ * cᵒᶜ * v * (T - reference_temperature), dims=(1, 3)))
+    mht = Integral(ρᵒᶜ * cᵒᶜ * v * (T - reference_temperature), dims=(1, 3))
     return mht
 end
 
