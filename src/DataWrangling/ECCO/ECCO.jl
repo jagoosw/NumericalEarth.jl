@@ -1,7 +1,7 @@
 module ECCO
 
 export ECCOMetadatum, ECCO_immersed_grid, adjusted_ECCO_tracers, initialize!
-export ECCO2Monthly, ECCO4Monthly, ECCO2Daily
+export ECCO2Monthly, ECCO4Monthly, ECCO2Daily, ECCO4Sixhourly
 export ECCOPrescribedAtmosphere
 
 export ECCO2DarwinMonthly, ECCO4DarwinMonthly
@@ -64,8 +64,10 @@ abstract type ECCODataset end
 struct ECCO2Monthly <:ECCODataset end
 struct ECCO2Daily   <:ECCODataset end
 struct ECCO4Monthly <:ECCODataset end
+struct ECCO4Sixhourly <:ECCODataset end
 
 include("ECCO_darwin.jl")
+include("ECCO_sixhourly.jl")
 
 function default_download_directory(::ECCO2Monthly)
     path = joinpath(download_ECCO_cache, "v2", "monthly")
@@ -215,6 +217,9 @@ ECCO_location = Dict(
     :eastward_wind         => (Center, Center, Nothing),
     :northward_wind        => (Center, Center, Nothing),
     :rain_freshwater_flux  => (Center, Center, Nothing),
+    :eastward_stress       => (Center, Center, Nothing),
+    :northward_stress      => (Center, Center, Nothing),
+    :wind_speed            => (Center, Center, Nothing),
 )
 
 const ECCOMetadata{D} = Metadata{<:ECCODataset, D}
