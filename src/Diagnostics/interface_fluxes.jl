@@ -8,9 +8,8 @@
 
 Return the two-dimensional frazil heat flux (W m⁻²) in a coupled `esm`.
 """
-function frazil_heat_flux(esm::EarthSystemModel)
-    return esm.interfaces.sea_ice_ocean_interface.fluxes.frazil_heat
-end
+frazil_heat_flux(esm::EarthSystemModel) =
+    esm.interfaces.sea_ice_ocean_interface.fluxes.frazil_heat
 
 """
     net_ocean_heat_flux(esm::EarthSystemModel)
@@ -30,9 +29,8 @@ end
 Return the sea ice-ocean heat flux (W m⁻²) at the sea ice-ocean interface
 in a coupled `esm`.
 """
-function sea_ice_ocean_heat_flux(esm::EarthSystemModel)
-    return esm.interfaces.sea_ice_ocean_interface.fluxes.interface_heat + frazil_heat_flux(esm)
-end
+sea_ice_ocean_heat_flux(esm::EarthSystemModel) =
+    esm.interfaces.sea_ice_ocean_interface.fluxes.interface_heat + frazil_heat_flux(esm)
 
 """
     atmosphere_ocean_heat_flux(esm::EarthSystemModel)
@@ -40,9 +38,8 @@ end
 Return the atmosphere-ocean heat flux (W m⁻²) at the atmosphere-ocean
 interface in a coupled `esm`.
 """
-function atmosphere_ocean_heat_flux(esm::EarthSystemModel)
-    return net_ocean_heat_flux(esm) - sea_ice_ocean_heat_flux(esm)
-end
+atmosphere_ocean_heat_flux(esm::EarthSystemModel) =
+    net_ocean_heat_flux(esm) - sea_ice_ocean_heat_flux(esm)
 
 
 ###########################
@@ -80,6 +77,5 @@ end
 Return the atmosphere-ocean freshwater mass flux (kg m⁻² s⁻¹) at the atmosphere-ocean
 interface in a coupled `esm`.
 """
-function atmosphere_ocean_freshwater_flux(esm::EarthSystemModel; reference_salinity = 35)
-    return net_ocean_freshwater_flux(esm) - sea_ice_ocean_freshwater_flux(esm)
-end
+atmosphere_ocean_freshwater_flux(esm::EarthSystemModel; reference_salinity = 35)
+    = net_ocean_freshwater_flux(esm) - sea_ice_ocean_freshwater_flux(esm)
