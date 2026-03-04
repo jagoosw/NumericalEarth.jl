@@ -78,12 +78,10 @@ for arch in test_architectures
         esm = OceanSeaIceModel(ocean, sea_ice; atmosphere, radiation = Radiation())
 
         T_flux = ocean.model.tracers.T.boundary_conditions.top.condition
-        S_flux = ocean.model.tracers.S.boundary_conditions.top.condition
         sea_ice_ocean_fluxes = esm.interfaces.sea_ice_ocean_interface.fluxes
         atmosphere_ocean_fluxes = esm.interfaces.atmosphere_ocean_interface.fluxes
 
         T_flux_value = 2.0
-        S_flux_value = 5.0
         frazil_heat_flux_value = 0.2
         interface_heat_flux_value = 0.3
         sea_ice_ocean_salt_flux_value = 0.9
@@ -91,7 +89,6 @@ for arch in test_architectures
         atmosphere_ocean_freshwater_flux_value = 1.7
 
         fill!(T_flux, T_flux_value)
-        fill!(S_flux, S_flux_value)
         fill!(sea_ice_ocean_fluxes.frazil_heat, frazil_heat_flux_value)
         fill!(sea_ice_ocean_fluxes.interface_heat, interface_heat_flux_value)
         fill!(sea_ice_ocean_fluxes.salt, sea_ice_ocean_salt_flux_value)
@@ -100,7 +97,6 @@ for arch in test_architectures
 
         ρᵒᶜ = esm.interfaces.ocean_properties.reference_density
         cᵒᶜ = esm.interfaces.ocean_properties.heat_capacity
-        S₀ = 34.0 # different from the default value
 
         frazil_heat = frazil_heat_flux(esm)
         net_ocean_heat = net_ocean_heat_flux(esm)
