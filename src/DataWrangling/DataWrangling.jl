@@ -5,11 +5,13 @@ restoring, or validation.
 module DataWrangling
 
 export Metadata, Metadatum, DatewiseFilename, ECCOMetadatum, EN4Metadatum, all_dates, first_date, last_date
+export BoundingBox, Column, Linear, Nearest
 export WOAClimatology, WOAAnnual, WOAMonthly
 export metadata_time_step, metadata_epoch
 export LinearlyTaperedPolarMask
 export DatasetRestoring, SurfaceFluxRestoring
-export ERA5Hourly, ERA5Monthly
+export ERA5HourlySingleLevel, ERA5MonthlySingleLevel, ERA5HourlyPressureLevels, ERA5MonthlyPressureLevels
+export native_grid
 
 using Oceananigans
 using Downloads
@@ -189,6 +191,7 @@ function z_interfaces end
 function longitude_interfaces end
 function latitude_interfaces end
 function reversed_vertical_axis end
+reversed_latitude_axis(dataset) = false
 function native_grid end
 function binary_data_grid end
 function binary_data_size end
@@ -238,5 +241,10 @@ using .ORCA
 using .WOA
 using .JRA55
 using .OSPapa
+
+# Fallback: if no download extension is loaded, check that all files already exist
+function download_dataset(metadata::Metadata)
+    error("No download method for $metadata is available (is the backend package loaded?)")
+end
 
 end # module
